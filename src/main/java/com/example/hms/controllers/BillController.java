@@ -1,6 +1,8 @@
 package com.example.hms.controllers;
 
 import com.example.hms.models.Bill;
+import com.example.hms.service.BillService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -9,44 +11,45 @@ import java.util.List;
 @RequestMapping("/api/v1/bills")
 public class BillController {
 
+
+    private BillService billService;
+
+    public BillController(BillService billService) {
+        this.billService = billService;
+    }
+
     @GetMapping
     public List<Bill> getAllBills() {
-        System.out.println("Fetching all bills");
-        return null;
+        return billService.getAllBills();
     }
 
     @PostMapping
     public Bill createBill(@RequestBody Bill bill) {
-        System.out.println("Creating new bill");
-        return bill;
+        return billService.createBill(bill);
     }
 
     @GetMapping("/{id}")
     public Bill getBillById(@PathVariable Long id) {
-        System.out.println("Fetching bill by id: " + id);
-        return null;
+        return billService.getBillById(id);
     }
 
     @DeleteMapping("/{id}")
     public void deleteBillById(@PathVariable Long id) {
-        System.out.println("Deleting bill by id: " + id);
+        billService.deleteBill(id);
     }
 
     @PutMapping
     public Bill updateBill(@RequestBody Bill bill) {
-        System.out.println("Updating bill");
-        return bill;
+        return billService.updateBill(bill);
     }
 
     @GetMapping("/patient/{patientId}")
     public List<Bill> getBillsByPatientId(@PathVariable Long patientId) {
-        System.out.println("Fetching bills for patient id: " + patientId);
-        return null;
+        return billService.getBillsByPatientId(patientId);
     }
 
     @GetMapping("/status/{status}")
     public List<Bill> getBillsByStatus(@PathVariable String status) {
-        System.out.println("Fetching bills by status: " + status);
-        return null;
+        return billService.getBillsByStatus(status);
     }
 }

@@ -1,6 +1,8 @@
 package com.example.hms.controllers;
 
 import com.example.hms.models.Appointment;
+import com.example.hms.service.AppointmentService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -9,44 +11,45 @@ import java.util.List;
 @RequestMapping("/api/v1/appointments")
 public class AppointmentController {
 
+
+    private AppointmentService appointmentService;
+
+    public AppointmentController(AppointmentService appointmentService) {
+        this.appointmentService = appointmentService;
+    }
+
     @GetMapping
     public List<Appointment> getAllAppointments() {
-        System.out.println("Fetching all appointments");
-        return null;
+        return appointmentService.getAllAppointments();
     }
 
     @PostMapping
     public Appointment createAppointment(@RequestBody Appointment appointment) {
-        System.out.println("Creating new appointment");
-        return appointment;
+        return appointmentService.createAppointment(appointment);
     }
 
     @GetMapping("/{id}")
     public Appointment getAppointmentById(@PathVariable Long id) {
-        System.out.println("Fetching appointment by id: " + id);
-        return null;
+        return appointmentService.getAppointmentById(id);
     }
 
     @DeleteMapping("/{id}")
     public void deleteAppointmentById(@PathVariable Long id) {
-        System.out.println("Deleting appointment by id: " + id);
+        appointmentService.deleteAppointment(id);
     }
 
     @PutMapping
     public Appointment updateAppointment(@RequestBody Appointment appointment) {
-        System.out.println("Updating appointment");
-        return appointment;
+        return appointmentService.updateAppointment(appointment);
     }
 
     @GetMapping("/patient/{patientId}")
     public List<Appointment> getAppointmentsByPatientId(@PathVariable Long patientId) {
-        System.out.println("Fetching appointments for patient id: " + patientId);
-        return null;
+        return appointmentService.getAppointmentsByPatientId(patientId);
     }
 
     @GetMapping("/doctor/{doctorId}")
     public List<Appointment> getAppointmentsByDoctorId(@PathVariable Long doctorId) {
-        System.out.println("Fetching appointments for doctor id: " + doctorId);
-        return null;
+        return appointmentService.getAppointmentsByDoctorId(doctorId);
     }
 }
