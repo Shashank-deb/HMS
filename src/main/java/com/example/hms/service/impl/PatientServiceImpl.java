@@ -3,7 +3,8 @@ package com.example.hms.service.impl;
 import com.example.hms.models.Patient;
 import com.example.hms.repository.PatientRepository;
 import com.example.hms.service.PatientService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,6 +15,7 @@ public class PatientServiceImpl implements PatientService {
 
     private PatientRepository patientRepository;
 
+    private static final Logger logger=LoggerFactory.getLogger(PatientServiceImpl.class);
     public PatientServiceImpl(PatientRepository patientRepository) {
         this.patientRepository = patientRepository;
     }
