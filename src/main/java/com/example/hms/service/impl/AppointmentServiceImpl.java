@@ -2,12 +2,8 @@ package com.example.hms.service.impl;
 
 import com.example.hms.dto.AppointmentRequest;
 import com.example.hms.events.AppointmentEvent;
-import com.example.hms.models.Appointment;
-import com.example.hms.models.Doctor;
-import com.example.hms.models.Patient;
-import com.example.hms.repository.AppointmentRepository;
-import com.example.hms.repository.DoctorRepository;
-import com.example.hms.repository.PatientRepository;
+import com.example.hms.models.*;
+import com.example.hms.repository.*;
 import com.example.hms.service.AppointmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -29,8 +25,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     @Transactional
     public Appointment createAppointment(AppointmentRequest request) {
-        // 1. Check Memory Cache (ConcurrentSkipListMap Logic)
-        if (!scheduleEngine.isTimeSlotTaken(request.getDoctorId(), request.getAppointmentTime())) {
+        if (!scheduleEngine.isSlotAvailable(request.getDoctorId(), request.getAppointmentTime())) {
             throw new RuntimeException("Doctor slot unavailable (Conflict Detected)");
         }
 
@@ -47,20 +42,13 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .build();
 
         Appointment saved = appointmentRepository.save(appointment);
-        
-        // Book the slot in memory
-        scheduleEngine.bookSlot(doctor.getId(), request.getAppointmentTime());
-        
-        // 2. Trigger Async Webhook
-        eventPublisher.publishEvent(new AppointmentEvent(this, saved));
-        
-        return saved;
-    }
 
-    @Override
-    public Appointment createAppointment(Appointment appointment) {
-        // Fallback or internal use
-        return appointmentRepository.save(appointment);
+
+        scheduleEngine.bookSlot(doctor.getId(), request.getAppointmentTime());
+
+        eventPublisher.publishEvent(new AppointmentEvent(this, saved));
+
+        return saved;
     }
 
     @Override
@@ -71,6 +59,11 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public Appointment getAppointmentById(Long id) {
         return appointmentRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public Appointment createAppointment(Appointment a) {
+        return appointmentRepository.save(a);
     }
 
     @Override

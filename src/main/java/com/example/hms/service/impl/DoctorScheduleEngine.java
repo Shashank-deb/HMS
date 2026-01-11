@@ -1,24 +1,34 @@
 package com.example.hms.service.impl;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
+
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.time.ZoneOffset;
 
 @Component
+@RequiredArgsConstructor
 public class DoctorScheduleEngine {
-    // Advanced Data Structure: ConcurrentSkipListMap for O(log n) time complexity range queries
-    private final Map<Long, ConcurrentSkipListMap<LocalDateTime, Boolean>> doctorSchedules = new ConcurrentHashMap<>();
 
-    public boolean isTimeSlotTaken(Long doctorId, LocalDateTime time) {
-        return doctorSchedules.computeIfAbsent(doctorId, k -> new ConcurrentSkipListMap<>())
-                .subMap(time.minusMinutes(29), time.plusMinutes(29)) // Check overlap
-                .isEmpty();
+    private final StringRedisTemplate redisTemplate;
+    private static final String KEY_PREFIX = "doctor_schedule:";
+
+    public boolean isSlotAvailable(Long doctorId, LocalDateTime time) {
+        String key = KEY_PREFIX + doctorId;
+
+        double appointmentTime = time.toEpochSecond(ZoneOffset.UTC);
+        double startRange = appointmentTime - (29 * 60);
+        double endRange = appointmentTime + (29 * 60);
+
+        Long count = redisTemplate.opsForZSet().count(key, startRange, endRange);
+
+        return count == null || count == 0;
     }
 
     public void bookSlot(Long doctorId, LocalDateTime time) {
-        doctorSchedules.computeIfAbsent(doctorId, k -> new ConcurrentSkipListMap<>())
-                .put(time, true);
+        String key = KEY_PREFIX + doctorId;
+        double score = time.toEpochSecond(ZoneOffset.UTC);
+        redisTemplate.opsForZSet().add(key, time.toString(), score);
     }
 }

@@ -1,28 +1,32 @@
 package com.example.hms.service;
 
+import com.example.hms.component.WebhookClient;
 import com.example.hms.events.AppointmentEvent;
 import com.example.hms.repository.WebhookRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 @RequiredArgsConstructor
 public class WebhookService {
+
     private final WebhookRepository webhookRepository;
-    private final WebClient webClient = WebClient.create();
+    private final WebhookClient webhookClient; // Inject the resilient client
 
     @Async
     @EventListener
     public void handleAppointmentEvent(AppointmentEvent event) {
+        // For every registered webhook URL, try to send the data securely
         webhookRepository.findByEventType("APPOINTMENT_CREATED").parallelStream().forEach(hook -> {
-            webClient.post().uri(hook.getUrl())
-                    .bodyValue(event.getAppointment())
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .subscribe();
+            try {
+                // The client handles Circuit Breaking and Retries internally
+                webhookClient.sendPayload(hook.getUrl(), event.getAppointment());
+            } catch (Exception e) {
+                // Log only; don't crash the async thread
+                System.err.println("Webhook failed after retries for " + hook.getUrl());
+            }
         });
     }
 }

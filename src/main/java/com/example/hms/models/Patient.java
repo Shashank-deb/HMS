@@ -21,9 +21,11 @@ public class Patient {
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
     @JsonIgnore
+    @Builder.Default // [FIX] Prevents null list when using Builder
     private List<Appointment> appointments = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
     @JsonIgnore
+    @Builder.Default // [FIX] Prevents null list when using Builder
     private List<Bill> bills = new ArrayList<>();
 }

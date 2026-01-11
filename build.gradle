@@ -25,14 +25,11 @@ repositories {
 }
 
 dependencies {
-    // --- 1. Fix for Gradle 9 Crash: Use BOM instead of Plugin ---
-    // This provides versions for 'implementation' dependencies
+    // --- 1. BOM (Bill of Materials) ---
+    // [FIX] Apply platform to ALL configurations including developmentOnly
     implementation platform('org.springframework.boot:spring-boot-dependencies:3.4.1')
-
-    // [FIX] You MUST also apply the platform to 'compileOnly' and 'annotationProcessor'
-    // so they can resolve versions for Lombok and the Configuration Processor.
-    compileOnly platform('org.springframework.boot:spring-boot-dependencies:3.4.1')
     annotationProcessor platform('org.springframework.boot:spring-boot-dependencies:3.4.1')
+    developmentOnly platform('org.springframework.boot:spring-boot-dependencies:3.4.1')
 
     // --- 2. Core Modules ---
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -42,7 +39,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-    // --- 4. Reactive ---
+    // --- 4. Reactive (WebClient) ---
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
     // --- 5. JWT Support ---
@@ -53,8 +50,14 @@ dependencies {
     // --- 6. Database ---
     implementation 'mysql:mysql-connector-java:8.0.33'
 
-    // --- 7. Tools & Utilities ---
-    // Now these will find their versions from the platform defined above
+    // --- 7. Caching (Redis) ---
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // --- 8. Resilience & Fault Tolerance (Resilience4j) ---
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    // --- 9. Tools & Utilities ---
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
@@ -63,7 +66,7 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6'
 
-    // --- 8. Logging (Log4j2) ---
+    // --- 10. Logging ---
     implementation 'org.springframework.boot:spring-boot-starter-log4j2'
     modules {
         module("org.springframework.boot:spring-boot-starter-logging") {
@@ -71,7 +74,7 @@ dependencies {
         }
     }
 
-    // --- 9. Testing ---
+    // --- 11. Testing ---
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
 }

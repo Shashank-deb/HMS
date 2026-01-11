@@ -21,5 +21,6 @@ public class Doctor {
 
     @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore 
+    @Builder.Default // [FIX] Ensures the list is initialized even when using .builder()
     private List<Appointment> appointments = new ArrayList<>();
 }
