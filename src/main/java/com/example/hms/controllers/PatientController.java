@@ -2,7 +2,6 @@ package com.example.hms.controllers;
 
 import com.example.hms.models.Patient;
 import com.example.hms.service.PatientService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

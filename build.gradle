@@ -1,12 +1,12 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '4.0.1'
-    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' version '3.4.1'
+    id 'io.spring.dependency-management' version '1.1.7' apply false 
 }
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
-description = 'HMS'
+description = 'HMS-Advanced'
 
 java {
     toolchain {
@@ -25,15 +25,46 @@ repositories {
 }
 
 dependencies {
+    // --- 1. Fix for Gradle 9 Crash: Use BOM instead of Plugin ---
+    implementation platform('org.springframework.boot:spring-boot-dependencies:3.4.1')
+
+    // --- 2. Core Modules ---
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // --- 3. Security & Validation (Required for your new features) ---
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // --- 4. Reactive (For Webhooks/WebClient) ---
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    // --- 5. JWT Support ---
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // --- 6. Database ---
+    implementation 'mysql:mysql-connector-java:8.0.33'
+
+    // --- 7. Tools & Utilities ---
     compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    runtimeOnly 'com.mysql:mysql-connector-j'
-    implementation 'org.springframework.boot:spring-boot-starter'
+
+    // --- 8. Logging (Log4j2) ---
     implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+    modules {
+        // Exclude default Logback to avoid conflicts
+        module("org.springframework.boot:spring-boot-starter-logging") {
+            replacedBy("org.springframework.boot:spring-boot-starter-log4j2", "Use Log4j2")
+        }
+    }
+
+    // --- 9. Testing ---
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
 }
 
 tasks.named('test') {
