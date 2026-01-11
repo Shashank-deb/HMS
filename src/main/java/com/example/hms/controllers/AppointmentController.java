@@ -21,7 +21,6 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.getAllAppointments());
     }
 
-    // [FIX] Changed to accept AppointmentRequest DTO
     @PostMapping
     public ResponseEntity<Appointment> createAppointment(@RequestBody AppointmentRequest request) {
         return ResponseEntity.ok(appointmentService.createAppointment(request));

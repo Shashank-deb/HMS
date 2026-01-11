@@ -1,6 +1,7 @@
 package com.example.hms.config;
 
 import com.example.hms.repository.UserRepository;
+import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module; // Import this
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +19,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class ApplicationConfig {
 
     private final UserRepository userRepository;
+
+    @Bean
+    public Hibernate6Module hibernateModule() {
+        return new Hibernate6Module();
+    }
 
     @Bean
     public UserDetailsService userDetailsService() {

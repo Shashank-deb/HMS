@@ -25,20 +25,20 @@ public class JwtService {
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = Jwts.parser() // Fixed: parserBuilder() -> parser()
-                .verifyWith(getSigningKey()) // Fixed: setSigningKey() -> verifyWith()
+        final Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
                 .build()
-                .parseSignedClaims(token) // Fixed: parseClaimsJws() -> parseSignedClaims()
-                .getPayload(); // Fixed: getBody() -> getPayload()
+                .parseSignedClaims(token)
+                .getPayload();
         return claimsResolver.apply(claims);
     }
 
     public String generateToken(UserDetails userDetails) {
         return Jwts.builder()
-                .subject(userDetails.getUsername()) // Fixed: setSubject() -> subject()
-                .issuedAt(new Date(System.currentTimeMillis())) // Fixed: setIssuedAt() -> issuedAt()
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration)) // Fixed: setExpiration() -> expiration()
-                .signWith(getSigningKey(), Jwts.SIG.HS256) // Fixed: Updated signing method
+                .subject(userDetails.getUsername())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(getSigningKey(), Jwts.SIG.HS256)
                 .compact();
     }
 

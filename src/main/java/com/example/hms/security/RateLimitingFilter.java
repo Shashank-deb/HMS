@@ -33,7 +33,7 @@ public class RateLimitingFilter implements Filter {
         });
 
         if (bucket.count.incrementAndGet() > MAX_REQUESTS) {
-            ((HttpServletResponse) res).setStatus(429); // Too Many Requests
+            ((HttpServletResponse) res).setStatus(429);
             res.getWriter().write("{\"error\": \"Rate limit exceeded\"}");
             return;
         }
