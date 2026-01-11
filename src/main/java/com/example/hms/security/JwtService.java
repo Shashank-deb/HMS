@@ -2,40 +2,43 @@ package com.example.hms.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import java.security.Key;
+
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.function.Function;
 
 @Service
 public class JwtService {
-    @Value("${application.security.jwt.secret}") private String secretKey;
-    @Value("${application.security.jwt.expiration}") private long jwtExpiration;
+    @Value("${application.security.jwt.secret}")
+    private String secretKey;
+    
+    @Value("${application.security.jwt.expiration}")
+    private long jwtExpiration;
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+        final Claims claims = Jwts.parser() // Fixed: parserBuilder() -> parser()
+                .verifyWith(getSigningKey()) // Fixed: setSigningKey() -> verifyWith()
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token) // Fixed: parseClaimsJws() -> parseSignedClaims()
+                .getPayload(); // Fixed: getBody() -> getPayload()
         return claimsResolver.apply(claims);
     }
 
     public String generateToken(UserDetails userDetails) {
         return Jwts.builder()
-                .setSubject(userDetails.getUsername())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .subject(userDetails.getUsername()) // Fixed: setSubject() -> subject()
+                .issuedAt(new Date(System.currentTimeMillis())) // Fixed: setIssuedAt() -> issuedAt()
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration)) // Fixed: setExpiration() -> expiration()
+                .signWith(getSigningKey(), Jwts.SIG.HS256) // Fixed: Updated signing method
                 .compact();
     }
 
@@ -48,7 +51,8 @@ public class JwtService {
         return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 
-    private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
+    private SecretKey getSigningKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

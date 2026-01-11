@@ -1,55 +1,56 @@
 package com.example.hms.controllers;
 
+import com.example.hms.dto.AppointmentRequest;
 import com.example.hms.models.Appointment;
 import com.example.hms.service.AppointmentService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/appointments")
+@RequiredArgsConstructor
 public class AppointmentController {
 
-
-    private AppointmentService appointmentService;
-
-    public AppointmentController(AppointmentService appointmentService) {
-        this.appointmentService = appointmentService;
-    }
+    private final AppointmentService appointmentService;
 
     @GetMapping
-    public List<Appointment> getAllAppointments() {
-        return appointmentService.getAllAppointments();
+    public ResponseEntity<List<Appointment>> getAllAppointments() {
+        return ResponseEntity.ok(appointmentService.getAllAppointments());
     }
 
+    // [FIX] Changed to accept AppointmentRequest DTO
     @PostMapping
-    public Appointment createAppointment(@RequestBody Appointment appointment) {
-        return appointmentService.createAppointment(appointment);
+    public ResponseEntity<Appointment> createAppointment(@RequestBody AppointmentRequest request) {
+        return ResponseEntity.ok(appointmentService.createAppointment(request));
     }
 
     @GetMapping("/{id}")
-    public Appointment getAppointmentById(@PathVariable Long id) {
-        return appointmentService.getAppointmentById(id);
+    public ResponseEntity<Appointment> getAppointmentById(@PathVariable Long id) {
+        Appointment appointment = appointmentService.getAppointmentById(id);
+        return appointment != null ? ResponseEntity.ok(appointment) : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}")
-    public void deleteAppointmentById(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteAppointmentById(@PathVariable Long id) {
         appointmentService.deleteAppointment(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping
-    public Appointment updateAppointment(@RequestBody Appointment appointment) {
-        return appointmentService.updateAppointment(appointment);
+    public ResponseEntity<Appointment> updateAppointment(@RequestBody Appointment appointment) {
+        return ResponseEntity.ok(appointmentService.updateAppointment(appointment));
     }
 
     @GetMapping("/patient/{patientId}")
-    public List<Appointment> getAppointmentsByPatientId(@PathVariable Long patientId) {
-        return appointmentService.getAppointmentsByPatientId(patientId);
+    public ResponseEntity<List<Appointment>> getAppointmentsByPatientId(@PathVariable Long patientId) {
+        return ResponseEntity.ok(appointmentService.getAppointmentsByPatientId(patientId));
     }
 
     @GetMapping("/doctor/{doctorId}")
-    public List<Appointment> getAppointmentsByDoctorId(@PathVariable Long doctorId) {
-        return appointmentService.getAppointmentsByDoctorId(doctorId);
+    public ResponseEntity<List<Appointment>> getAppointmentsByDoctorId(@PathVariable Long doctorId) {
+        return ResponseEntity.ok(appointmentService.getAppointmentsByDoctorId(doctorId));
     }
 }

@@ -1,10 +1,14 @@
 package com.example.hms.service.impl;
 
-import com.example.hms.events.AppointmentEvent;
-import com.example.hms.models.*;
-import com.example.hms.repository.*;
-import com.example.hms.service.AppointmentService;
 import com.example.hms.dto.AppointmentRequest;
+import com.example.hms.events.AppointmentEvent;
+import com.example.hms.models.Appointment;
+import com.example.hms.models.Doctor;
+import com.example.hms.models.Patient;
+import com.example.hms.repository.AppointmentRepository;
+import com.example.hms.repository.DoctorRepository;
+import com.example.hms.repository.PatientRepository;
+import com.example.hms.service.AppointmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -25,13 +29,15 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     @Transactional
     public Appointment createAppointment(AppointmentRequest request) {
-        // 1. Check Memory Cache (Heavy Collection Logic)
+        // 1. Check Memory Cache (ConcurrentSkipListMap Logic)
         if (!scheduleEngine.isTimeSlotTaken(request.getDoctorId(), request.getAppointmentTime())) {
             throw new RuntimeException("Doctor slot unavailable (Conflict Detected)");
         }
 
-        Doctor doctor = doctorRepository.findById(request.getDoctorId()).orElseThrow();
-        Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow();
+        Doctor doctor = doctorRepository.findById(request.getDoctorId())
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+        Patient patient = patientRepository.findById(request.getPatientId())
+                .orElseThrow(() -> new RuntimeException("Patient not found"));
 
         Appointment appointment = Appointment.builder()
                 .doctor(doctor)
@@ -41,6 +47,8 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .build();
 
         Appointment saved = appointmentRepository.save(appointment);
+        
+        // Book the slot in memory
         scheduleEngine.bookSlot(doctor.getId(), request.getAppointmentTime());
         
         // 2. Trigger Async Webhook
@@ -49,12 +57,39 @@ public class AppointmentServiceImpl implements AppointmentService {
         return saved;
     }
 
-    // Implementing interface methods required by context...
-    @Override public List<Appointment> getAllAppointments() { return appointmentRepository.findAll(); }
-    @Override public Appointment getAppointmentById(Long id) { return appointmentRepository.findById(id).orElse(null); }
-    @Override public Appointment updateAppointment(Appointment appointment) { return appointmentRepository.save(appointment); }
-    @Override public void deleteAppointment(Long id) { appointmentRepository.deleteById(id); }
-    @Override public List<Appointment> getAppointmentsByPatientId(Long id) { return appointmentRepository.findByPatientId(id); }
-    @Override public List<Appointment> getAppointmentsByDoctorId(Long id) { return appointmentRepository.findByDoctorId(id); }
-    @Override public Appointment createAppointment(Appointment a) { return appointmentRepository.save(a); } // Overload
+    @Override
+    public Appointment createAppointment(Appointment appointment) {
+        // Fallback or internal use
+        return appointmentRepository.save(appointment);
+    }
+
+    @Override
+    public List<Appointment> getAllAppointments() {
+        return appointmentRepository.findAll();
+    }
+
+    @Override
+    public Appointment getAppointmentById(Long id) {
+        return appointmentRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public Appointment updateAppointment(Appointment appointment) {
+        return appointmentRepository.save(appointment);
+    }
+
+    @Override
+    public void deleteAppointment(Long id) {
+        appointmentRepository.deleteById(id);
+    }
+
+    @Override
+    public List<Appointment> getAppointmentsByPatientId(Long id) {
+        return appointmentRepository.findByPatientId(id);
+    }
+
+    @Override
+    public List<Appointment> getAppointmentsByDoctorId(Long id) {
+        return appointmentRepository.findByDoctorId(id);
+    }
 }

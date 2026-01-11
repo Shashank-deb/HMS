@@ -25,10 +25,13 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody AuthRequest request) {
+        if(userRepository.findByEmail(request.getEmail()).isPresent()) {
+            return ResponseEntity.badRequest().body("Email already in use");
+        }
         userRepository.save(User.builder()
                 .email(request.getEmail())
                 .password(encoder.encode(request.getPassword()))
-                .role(Role.DOCTOR)
+                .role(Role.DOCTOR) // Default role
                 .build());
         return ResponseEntity.ok("Registered");
     }
@@ -42,7 +45,7 @@ public class AuthController {
         // SECURE COOKIE IMPLEMENTATION
         ResponseCookie cookie = ResponseCookie.from("auth_token", token)
                 .httpOnly(true)
-                .secure(false) // Set to true in prod
+                .secure(false) // Set to true in prod (requires HTTPS)
                 .path("/")
                 .maxAge(86400)
                 .sameSite("Strict")
