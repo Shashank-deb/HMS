@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 5s # Scrape metrics every 5 seconds
+
+scrape_configs:
+  - job_name: 'hms-backend'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['hms-app:1003'] # Connects to your Spring Boot container

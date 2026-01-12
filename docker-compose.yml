@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # --- Service 1: Database (MySQL) ---
+  # 1. Database
   mysqldb:
     image: mysql:8.0
     container_name: hms-mysql
@@ -20,7 +20,7 @@ services:
       timeout: 20s
       retries: 10
 
-  # --- Service 2: Cache (Redis) ---
+  # 2. Cache
   redisdb:
     image: redis:alpine
     container_name: hms-redis
@@ -30,35 +30,87 @@ services:
     networks:
       - hms-network
 
-  # --- Service 3: The Spring Boot Application ---
+  # 3. Zookeeper (For Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.2
+    container_name: hms-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - hms-network
+
+  # 4. Kafka (Messaging)
+  kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: hms-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - hms-network
+
+  # 5. Application
   hms-app:
-    build: .                 # Builds from Dockerfile in current directory
+    build: .
     container_name: hms-backend
     restart: on-failure
     ports:
       - "1003:1003"
     environment:
-      # Network Magic: Use service names ("mysqldb", "redisdb") as hostnames
       SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/hms?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: tiger
       SPRING_DATA_REDIS_HOST: redisdb
       SPRING_DATA_REDIS_PORT: 6379
-      # Security Config
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       APPLICATION_SECURITY_JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
       APPLICATION_SECURITY_JWT_EXPIRATION: 86400000
     depends_on:
       mysqldb:
-        condition: service_healthy # Wait until MySQL is actually ready
+        condition: service_healthy
       redisdb:
+        condition: service_started
+      kafka:
         condition: service_started
     networks:
       - hms-network
 
-# --- Persistence & Networking ---
+  # --- [NEW] Level 4: Observability ---
+
+  # 6. Prometheus (Metrics Collector)
+  prometheus:
+    image: prom/prometheus
+    container_name: hms-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - hms-network
+
+  # 7. Grafana (Dashboard Visualization)
+  grafana:
+    image: grafana/grafana
+    container_name: hms-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - hms-network
+
 volumes:
-  mysql_data: # Named volume to store DB data
+  mysql_data:
 
 networks:
   hms-network:
-    driver: bridge # Creates a private internal network
+    driver: bridge
